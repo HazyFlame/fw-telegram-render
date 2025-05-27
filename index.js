@@ -1,12 +1,22 @@
 import express from 'express';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
+import multer from 'multer';
+import { Buffer } from 'buffer';
 
 const app = express();
-app.use(express.json({ limit: '1mb' })); // Tăng limit để nhận file lớn
+const upload = multer();
 
-app.post('/send', async (req, res) => {
-  const { token, chat_id, text, parse_mode, fileName, fileData, fileType } = req.body;
+app.post('/send', upload.none(), async (req, res) => {
+  const {
+    token,
+    chat_id,
+    text,
+    parse_mode,
+    fileName,
+    fileData,
+    fileType
+  } = req.body;
 
   if (!token || !chat_id) {
     return res.status(400).json({ error: 'Missing token or chat_id' });
@@ -16,20 +26,20 @@ app.post('/send', async (req, res) => {
     let response;
 
     if (fileData && fileName) {
-      // Gửi file
-      const form = new FormData();
       const buffer = Buffer.from(fileData, 'base64');
       const field = fileType === 'photo' ? 'photo' : 'document';
 
+      const form = new FormData();
       form.append('chat_id', chat_id);
       form.append(field, buffer, fileName);
+      if (text) form.append('caption', text);
+      if (parse_mode) form.append('parse_mode', parse_mode);
 
       response = await fetch(`https://api.telegram.org/bot${token}/${fileType === 'photo' ? 'sendPhoto' : 'sendDocument'}`, {
         method: 'POST',
         body: form,
       });
     } else if (text) {
-      // Gửi tin nhắn
       response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
