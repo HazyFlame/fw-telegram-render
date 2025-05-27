@@ -7,7 +7,28 @@ import { Buffer } from 'buffer';
 const app = express();
 const upload = multer();
 
-app.post('/send', upload.none(), async (req, res) => {
+app.post('/send', async (req, res) => {
+  const { chat_id, text, parse_mode, token } = req.body;
+
+  if (!token || !chat_id || !text) {
+    return res.status(400).json({ error: 'Missing token, chat_id or text' });
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id, text, parse_mode }),
+    });
+
+    const result = await response.json();
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to send message', details: err.message });
+  }
+});
+
+app.post('/sendFile', upload.none(), async (req, res) => {
   const {
     token,
     chat_id,
