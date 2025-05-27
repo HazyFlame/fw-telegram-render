@@ -7,6 +7,7 @@ import { Buffer } from 'buffer';
 const app = express();
 const upload = multer();
 
+app.use(express.json({ limit: '1mb' }));
 app.post('/send', async (req, res) => {
   const { chat_id, text, parse_mode, token } = req.body;
 
